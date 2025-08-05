@@ -1,0 +1,60 @@
+#include "WiFi.h"
+#include "AdafruitIO_WiFi.h"
+
+// ====== WiFi Credentials ======
+#define WIFI_SSID       "Samarth"
+#define WIFI_PASS       "1122334455"
+
+// ====== Adafruit IO Credentials ======
+#define IO_USERNAME     "your_username"
+#define IO_KEY          "your_aio_key"
+
+// Create an instance of Adafruit IO WiFi client
+AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS);
+
+// On-board LED pin (GPIO 2)
+#define LED_PIN 2
+
+// Create a feed object for "led"
+AdafruitIO_Feed *led = io.feed("led");
+
+void setup() {
+  // Start Serial
+  Serial.begin(115200);
+
+  // Set LED pin as output
+  pinMode(LED_PIN, OUTPUT);
+
+  // Connect to Adafruit IO
+  Serial.print("Connecting to Adafruit IO...");
+  io.connect();
+
+  // Wait for connection
+  while(io.status() < AIO_CONNECTED) {
+    Serial.print(".");
+    delay(500);
+  }
+
+  Serial.println(" Connected!");
+
+  // Subscribe to the feed and attach message handler
+  led->onMessage(handleMessage);
+  led->get();
+}
+
+void loop() {
+  io.run(); // Keep Adafruit IO client running
+}
+
+// This function is called whenever the 'led' feed receives new data
+void handleMessage(AdafruitIO_Data *data) {
+  String state = data->toString();
+  Serial.print("Received value: ");
+  Serial.println(state);
+
+  if (state == "ON" || state == "1") {
+    digitalWrite(LED_PIN, HIGH);
+  } else {
+    digitalWrite(LED_PIN, LOW);
+  }
+}
